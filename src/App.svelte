@@ -1,50 +1,49 @@
 <script lang="ts">
 	import {onMount} from "svelte";
+	import {invoke} from "@tauri-apps/api";
+	import {exit} from "@tauri-apps/api/process";
 	import {repositionApp, setAppHeight} from "./lib/utils";
 
 	type InputKeyEvent = KeyboardEvent & { currentTarget: EventTarget & HTMLInputElement }
+	type Option = {
+		value: string,
+		label: string
+	}
 
 	let main: HTMLElement;
 	let options: HTMLElement[] = [];
 	let observer: ResizeObserver;
+	let data: Option[] = [];
+	let shownData = [];
+	let searchValue = "";
+	let selectIndex = -1;
 
-	onMount(() => {
+	onMount(async () => {
+		shownData = data = await invoke<Option[]>("get_options");
 		observer = new ResizeObserver(elems => {
 			setAppHeight(elems[0].borderBoxSize[0].blockSize)
 		});
 		observer.observe(main);
-		repositionApp();
-	})
-
-	const data = [
-		{label: "California"},
-		{label: "North Carolina"},
-		{label: "North Dakota"},
-		{label: "South Carolina"},
-		{label: "South Dakota"},
-		{label: "Michigan"},
-		{label: "Tennessee"},
-		{label: "Nevada"},
-		{label: "New Hampshire"},
-		{label: "New Jersey"},
-	];
-
-	let shownData = data;
-	let searchValue = "";
-	let selectIndex = -1;
+		await repositionApp();
+	});
 
 	const cancelEvent = () => false;
 
 	function chooseOption(index: number) {
 		if (index < 0) { index = 0 }
 		else if (index >= shownData.length - 1) { index = shownData.length - 1 }
-		console.info(index)
 		selectIndex = index
 		options[selectIndex].scrollIntoView({
 			block: "nearest"
 		})
 	}
-	function select(e: InputKeyEvent) {
+
+	async function sendValue(index: number) {
+		await invoke("stdout", { value: shownData[selectIndex].value })
+		await exit(0)
+	}
+
+	async function selectKey(e: InputKeyEvent) {
 		switch (e.code) {
 			case 'ArrowUp':
 				chooseOption(selectIndex - 1)
@@ -55,10 +54,9 @@
 				e.preventDefault()
 				break
 			case 'Enter':
-				// TODO: close app and return value
+				await sendValue(selectIndex)
 				break
 		}
-
 	}
 
 	function search(e: InputKeyEvent) {
@@ -79,15 +77,23 @@
 		};
 	}
 
+	function selectMouse(i: number) {
+		return () => {
+			sendValue(i)
+		}
+	}
+
 
 </script>
 
 <main bind:this={main}>
 	<input type="text" placeholder="Search..." bind:value={searchValue}
-		   on:keydown={select} on:keyup={search} on:change={search} use:focus />
+		   on:keydown={selectKey} on:keyup={search} on:change={search} use:focus />
 	<div id="options" on:selectstart={cancelEvent}>
 		{#each shownData as d, i}
 			<div class="option" class:selected={selectIndex === i}
+				 on:keydown={selectMouse(i)}
+				 on:click={selectMouse(i)}
 				 on:mouseenter={setHoverIndex(i)}
 				 on:selectstart={cancelEvent}
 				 bind:this={options[i]}>{d.label}</div>

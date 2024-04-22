@@ -4,7 +4,7 @@
 		"beforeBuildCommand": "npm run build",
 		"beforeDevCommand": "npm run dev",
 		"devPath": "http://localhost:5173",
-		"distDir": "../public",
+		"distDir": "../dist",
 		"withGlobalTauri": true
 	},
 	"package": {
@@ -15,6 +15,9 @@
 		"allowlist": {
 			"window": {
 				"all": true
+			},
+			"process": {
+				"exit": true
 			}
 		},
 		"cli": {
@@ -43,7 +46,7 @@
 				"icons/icon.icns",
 				"icons/icon.ico"
 			],
-			"identifier": "com.tauri.dev",
+			"identifier": "net.codebutter.selektor",
 			"longDescription": "",
 			"macOS": {
 				"entitlements": null,
