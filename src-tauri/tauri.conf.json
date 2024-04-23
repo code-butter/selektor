@@ -28,6 +28,12 @@
 					"short": "o",
 					"takesValue": true,
 					"required": false
+				},
+				{
+					"name": "prompt",
+					"short": "p",
+					"takesValue": true,
+					"required": false
 				}
 			]
 		},
@@ -73,8 +79,6 @@
 		"windows": [
 			{
 				"focus": true,
-				"height": 600.0,
-				"width": 800.0,
 				"fullscreen": false,
 				"transparent": true,
 				"title": "selektor",

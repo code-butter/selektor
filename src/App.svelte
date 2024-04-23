@@ -2,9 +2,14 @@
 	import {onMount} from "svelte";
 	import {invoke} from "@tauri-apps/api";
 	import {exit} from "@tauri-apps/api/process";
-	import {repositionApp, setAppHeight} from "./lib/utils";
+	import {setAppHeight} from "./lib/utils";
 
-	type InputKeyEvent = KeyboardEvent & { currentTarget: EventTarget & HTMLInputElement }
+	type InputKeyEvent<T> = KeyboardEvent & { currentTarget: EventTarget & T }
+	type AppConfig = {
+		options: Option[],
+		prompt: string
+	}
+
 	type Option = {
 		value: string,
 		label: string
@@ -13,25 +18,25 @@
 	let main: HTMLElement;
 	let options: HTMLElement[] = [];
 	let observer: ResizeObserver;
-	let data: Option[] = [];
-	let shownData = [];
+	let config: AppConfig;
+	let shownOptions = [];
 	let searchValue = "";
 	let selectIndex = -1;
 
 	onMount(async () => {
-		shownData = data = await invoke<Option[]>("get_options");
+		config = await invoke<AppConfig>("get_config")
+		shownOptions = config.options;
 		observer = new ResizeObserver(elems => {
 			setAppHeight(elems[0].borderBoxSize[0].blockSize)
 		});
 		observer.observe(main);
-		await repositionApp();
 	});
 
 	const cancelEvent = () => false;
 
 	function chooseOption(index: number) {
 		if (index < 0) { index = 0 }
-		else if (index >= shownData.length - 1) { index = shownData.length - 1 }
+		else if (index >= shownOptions.length - 1) { index = shownOptions.length - 1 }
 		selectIndex = index
 		options[selectIndex].scrollIntoView({
 			block: "nearest"
@@ -39,11 +44,11 @@
 	}
 
 	async function sendValue(index: number) {
-		await invoke("stdout", { value: shownData[selectIndex].value })
+		await invoke("stdout", { value: shownOptions[index].value })
 		await exit(0)
 	}
 
-	async function selectKey(e: InputKeyEvent) {
+	async function selectKey(e: InputKeyEvent<Window>) {
 		switch (e.code) {
 			case 'ArrowUp':
 				chooseOption(selectIndex - 1)
@@ -56,15 +61,18 @@
 			case 'Enter':
 				await sendValue(selectIndex)
 				break
+			case 'Escape':
+				await exit(0)
+				break;
 		}
 	}
 
-	function search(e: InputKeyEvent) {
+	function search(e: InputKeyEvent<HTMLInputElement>) {
 		if (e.code == 'ArrowUp' || e.code == 'ArrowDown' || e.code == 'Enter') {
 			return;
 		}
 		selectIndex = -1
-		shownData = data.filter( d => d.label.toLowerCase().match(searchValue.toLowerCase()))
+		shownOptions = config.options.filter(d => d.label.toLowerCase().match(searchValue.toLowerCase()))
 	}
 
 	function focus(e: HTMLElement) {
@@ -86,19 +94,21 @@
 
 </script>
 
+<svelte:window on:keydown={selectKey} />
+
 <main bind:this={main}>
-	<input type="text" placeholder="Search..." bind:value={searchValue}
-		   on:keydown={selectKey} on:keyup={search} on:change={search} use:focus />
+	<input type="text" placeholder={config?.prompt || 'Search..'} bind:value={searchValue} on:keyup={search} on:change={search} use:focus />
 	<div id="options" on:selectstart={cancelEvent}>
-		{#each shownData as d, i}
+		{#each shownOptions as d, i}
 			<div class="option" class:selected={selectIndex === i}
 				 on:keydown={selectMouse(i)}
 				 on:click={selectMouse(i)}
 				 on:mouseenter={setHoverIndex(i)}
-				 on:selectstart={cancelEvent}
-				 bind:this={options[i]}>{d.label}</div>
+				 bind:this={options[i]}>
+				{d.label}
+			</div>
 		{/each}
-		{#if !shownData.length}
+		{#if !shownOptions.length}
 			<div class="option">(no data)</div>
 		{/if}
 	</div>

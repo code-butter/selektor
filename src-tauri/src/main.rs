@@ -2,10 +2,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{env, io};
+use std::error::Error;
 use std::io::Write;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
+use tauri::api::cli::Matches;
 
 #[derive(Serialize,Deserialize,Clone)]
 struct Option {
@@ -13,9 +15,37 @@ struct Option {
     value: String
 }
 
-#[derive(Serialize,Deserialize)]
-struct AppState {
-    options: Vec<Option>
+#[derive(Serialize,Deserialize,Clone)]
+struct AppConfig {
+    options: Vec<Option>,
+    prompt:  String
+}
+
+fn blank_default() -> Result<String, Box<dyn Error>> {
+    Ok("".to_owned())
+}
+
+fn get_opt_string(matches: &Matches, name: &str, default: fn() -> Result<String, Box<dyn Error>>) -> Result<String, Box<dyn Error>> {
+    Ok(if matches.args[name].occurrences > 0 {
+        matches.args[name].value.to_string()
+    } else {
+        match env::var(format!("SELEKTOR_{}", name.to_uppercase())) {
+            Ok(v) => v,
+            Err(_) => default()?
+        }
+    })
+}
+
+fn get_options(matches: &Matches) -> Result<Vec<Option>, Box<dyn Error>> {
+    let default = || {
+        let mut buffer = String::new();
+        let stdin = io::stdin();
+        stdin.read_line(&mut buffer)?;
+        Ok(buffer)
+    };
+    let options_string = get_opt_string(&matches, "options", default)?;
+    let options: Vec<Option> = serde_json::from_str(options_string.as_str())?;
+    Ok(options)
 }
 
 fn main() {
@@ -23,26 +53,12 @@ fn main() {
         .setup(|app| {
             let handle = app.handle();
             let matches = app.get_cli_matches()?;
-            let options_string = if matches.args["options"].occurrences > 0 {
-                matches.args["options"].value.to_string()
-            } else {
-                match env::var("SELEKTOR_OPTIONS") {
-                    Ok(v) => v,
-                    Err(_) => {
-                        let mut buffer = String::new();
-                        let stdin = io::stdin();
-                        stdin.read_line(&mut buffer)?;
-                        buffer
-                    }
-                }
-
-            };
-            // TODO: better error message here
-            let options: Vec<Option> = serde_json::from_str(options_string.as_str())?;
-            handle.manage(Mutex::new(AppState { options }));
+            let options = get_options(&matches)?;
+            let prompt = get_opt_string(&matches, "prompt", blank_default)?;
+            handle.manage(Mutex::new(AppConfig { options, prompt }));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![stdout,get_options])
+        .invoke_handler(tauri::generate_handler![stdout,get_config])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -57,8 +73,8 @@ fn stdout(value: String) {
 }
 
 #[tauri::command]
-fn get_options(app_state: State<'_, Mutex<AppState>>) -> Vec<Option> {
+fn get_config(app_state: State<'_, Mutex<AppConfig>>) -> AppConfig {
     let state = app_state.lock()
         .expect("could not unlock app state");
-    state.options.clone()
+    state.clone()
 }
