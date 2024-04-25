@@ -90,8 +90,6 @@
 			sendValue(i)
 		}
 	}
-
-
 </script>
 
 <svelte:window on:keydown={selectKey} />
