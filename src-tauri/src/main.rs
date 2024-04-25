@@ -6,6 +6,7 @@ use std::error::Error;
 use std::io::Write;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tauri::{Manager, State};
 use tauri::api::cli::Matches;
 
@@ -27,7 +28,10 @@ fn blank_default() -> Result<String, Box<dyn Error>> {
 
 fn get_opt_string(matches: &Matches, name: &str, default: fn() -> Result<String, Box<dyn Error>>) -> Result<String, Box<dyn Error>> {
     Ok(if matches.args[name].occurrences > 0 {
-        matches.args[name].value.to_string()
+        match &matches.args[name].value {
+            Value::String(s) => s.clone(),
+            _ => matches.args[name].value.to_string()
+        }
     } else {
         match env::var(format!("SELEKTOR_{}", name.to_uppercase())) {
             Ok(v) => v,
