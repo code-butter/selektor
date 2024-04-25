@@ -7,6 +7,7 @@ const app = new App({
   target: document.getElementById('app'),
 })
 
-repositionApp();
+repositionApp()
+window.setTimeout(repositionApp) // Call it again just to make sure it gets repositioned
 
 export default app
