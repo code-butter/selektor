@@ -68,12 +68,15 @@ jobs:
         run: npm install
 
       - name: Build app
-        run:  npm run tauri build -- ${{ matrix.args }} -b none
+        run: |  
+          npm run tauri build -- ${{ matrix.args }} -b none
+          mkdir -p out
+          mv src-tauri/target/${{ matrix.target_path }} out/${{ matrix.asset_name }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset_name }}
-          path: src-tauri/target/${{ matrix.target_path }}
+          name: ${{ matrix.platform }}
+          path: out/${{ matrix.asset_name }}
           if-no-files-found: error
 
   publish:
