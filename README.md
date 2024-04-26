@@ -3,6 +3,8 @@
 Select from available options with scripting. This is a simple GUI application that pipes the selected option back to 
 the script.
 
+![Visual demo: opening the interface via script](./demo.webp)
+
 ## Installation
 
 ### Prebuilt Binaries
