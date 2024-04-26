@@ -55,14 +55,14 @@ jobs:
         uses: actions/cache@v3
         with:
           path: node_modules
-          key: "${{ matrix.os }}-npm-${{ hashFiles('package-lock.json') }}"
+          key: "${{ matrix.platform }}-npm-${{ hashFiles('package-lock.json') }}"
 
 
       - name: Cache Rust build
         uses: actions/cache@v3
         with:
           path: src-tauri/target
-          key: "${{ matrix.os }}-rust-${{ hashFiles('src-tauri/Cargo.lock') }}"
+          key: "${{ matrix.platform }}-rust-${{ hashFiles('src-tauri/Cargo.lock') }}"
 
       - name: Install frontend dependencies
         run: npm install
