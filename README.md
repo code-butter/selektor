@@ -13,6 +13,8 @@ the script.
   
 The MacOS build is universal and will work on Intel and ARM Macs. 
 
+These binaries are not currently signed, but will be eventually.
+
 ### Build it yourself
 
 * [Install all the dependencies for Tauri development](https://tauri.app/v1/guides/getting-started/prerequisites/)
@@ -61,4 +63,5 @@ else:
     sys.stdout.write("You selected %s\n" % stdout)
 
 ```
+
 
