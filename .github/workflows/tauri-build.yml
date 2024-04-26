@@ -52,14 +52,14 @@ jobs:
           targets: ${{ matrix.toolchains }}
 
       - name: Cache NPM modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: "${{ matrix.platform }}-npm-${{ hashFiles('package-lock.json') }}"
 
 
       - name: Cache Rust build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: src-tauri/target
           key: "${{ matrix.platform }}-rust-${{ hashFiles('src-tauri/Cargo.lock') }}"
