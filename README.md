@@ -5,8 +5,19 @@ the script.
 
 ## Installation
 
-For right now you need to [install all the dependencies for Tauri development](https://tauri.app/v1/guides/getting-started/prerequisites/)
-and then run `npm run tauri build`. There is a plan to provide binaries in the future.
+### Prebuilt Binaries
+
+* Visit the latest release to get the binary for your platform. 
+* Copy it to a directory in your PATH environment variable. 
+  * rename it to 'selektor' if you downloaded the MacOS or Linux version 
+  
+The MacOS build is universal and will work on Intel and ARM Macs. 
+
+### Build it yourself
+
+* [Install all the dependencies for Tauri development](https://tauri.app/v1/guides/getting-started/prerequisites/)
+* `npm install`
+* `npm run tauri build` 
 
 Copy the resulting binary nested somewhere in `src-tauri/target` to a directory in your PATH. 
 
